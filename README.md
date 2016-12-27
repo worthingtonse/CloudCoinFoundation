@@ -1,0 +1,2 @@
+# CloudCoinFoundation
+Used for Founders
