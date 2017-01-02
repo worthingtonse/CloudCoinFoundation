@@ -218,7 +218,7 @@ public class RAIDA
     public String get_ticket( CloudCoin cc ){
         String returnStatus = "";
         this.lastTicket = "none";
-        String url = fullUrl + "get_ticket?nn="+cc.nn+"&sn="+cc.sn+"&an="+cc.ans[RAIDANumber]+"&pan="+cc.pans[RAIDANumber]+"&denomination="+ cc.getDenomination();
+        String url = fullUrl + "get_ticket?nn="+cc.nn+"&sn="+cc.sn+"&an="+cc.ans[RAIDANumber]+"&pan="+cc.ans[RAIDANumber]+"&denomination="+ cc.getDenomination();
         System.out.println("\n Request: "  +  url );
 
         String html = "";
