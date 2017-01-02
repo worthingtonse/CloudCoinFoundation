@@ -2,15 +2,15 @@ import java.util.Arrays;
 import java.security.SecureRandom;
 import java.util.concurrent.*;
 import java.util.Random;
-import org.json.JSONException;
-import org.json.JSONObject;
+//import org.json.JSONException;
+//import org.json.JSONArray;
+//import org.json.JSONObject;
 import java.util.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import org.json.JSONArray;
 import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,11 +26,12 @@ public class Bank
 {
     // instance variables - replace the example below with your own
     public KeyboardReader reader = new KeyboardReader();
-    public CloudCoin[] newCoins; 
+    public CloudCoin[] chestCoins; 
     public CloudCoin[] frackedCoins;
     public CloudCoin[] importedCoins;
     public CloudCoin[] bankedCoins;
     public CloudCoin[] counterfeitCoins;
+    public CloudCoin[] exportCoins;
 
     /**
      * CONSTRUCTOR
@@ -53,7 +54,7 @@ public class Bank
         return totalCount;
     }//end count coins
 
-    public boolean exportJson(int m1, int m5, int m25, int m100, int m250, String path, String tag, String rootFolder ){
+    public boolean exportJson( int m1, int m5, int m25, int m100, int m250, String path, String tag, String rootFolder ){
         boolean jsonExported = true;
         int totalSaved = m1 + ( m5 * 5 ) + ( m25 * 25 ) + (m100 * 100 ) + ( m250  * 250 );
         int coinCount = m1 + m5 + m25 + m100 + m250;
@@ -61,7 +62,7 @@ public class Bank
         /* CONSRUCT JSON STRING FOR SAVING */
         CloudCoin[] coinsToDelete =  new CloudCoin[coinCount];
         int c = 0;//c= counter
-        String json = "{ \"CloudCoin\": [";
+        String json = "{ \"cloudcoin\": [";
         for(int i =0; i< bankedCoins.length; i++ ){
             if( bankedCoins[i].getDenomination() == 1 && m1 > 0 ){ 
                 if( c !=0 ){ json += ",\n";} 
@@ -177,13 +178,37 @@ public class Bank
         return loadedCoins;
     }//end load fracked  
 
+     /**
+     * This method is used to load .jpg and .jpeg files.
+     * @param  loadFilePath: The path to the Bank file and the name of the file. 
+     * @param  Security: How the ANs are going to be changed during import (Random, Keep, password).
+     */
+    public boolean loadJpeg( String loadFilePath) {  
+        boolean isSuccessful =false;
+        System.out.println("Trying to load: " + loadFilePath );
+        String incomeJson = ""; 
+        // String new fileName = coinCount +".CloudCoin.New"+ rand.nextInt(5000) + "";
+        try{
+            incomeJson = loadJSON( loadFilePath );
+            isSuccessful = true;
+        }catch( IOException ex ){
+            System.out.println( "JPEG Corupt Error: " + ex );
+        }
+        // String ans[] = new String[25];
+         CloudCoin tempCoin = new CloudCoin( loadFilePath );
+         tempCoin.saveCoin("income");
+         return isSuccessful;
+    }//end load income
+    
+    
     /**
      * This method is used to load .chest and .stack files that are in JSON notation.
      * 
      * @param  loadFilePath: The path to the Bank file and the name of the file. 
      * @param  Security: How the ANs are going to be changed during import (Random, Keep, password).
      */
-    public void loadIncome( String loadFilePath, String security ) {  
+    public boolean loadIncome( String loadFilePath, String extension) {  
+        boolean isSuccessful = false;
         System.out.println("Trying to load: " + loadFilePath );
         String incomeJson = ""; 
         // String new fileName = coinCount +".CloudCoin.New"+ rand.nextInt(5000) + "";
@@ -197,27 +222,31 @@ public class Bank
 
         try{
             JSONObject o = new JSONObject( incomeJson );
-            incomeJsonArray = o.getJSONArray("CloudCoin");
-            this.newCoins = new CloudCoin[incomeJsonArray.length()];
+            incomeJsonArray = o.getJSONArray("cloudcoin");
+            //this.newCoins = new CloudCoin[incomeJsonArray.length()];
+            CloudCoin tempCoin = null;
             for (int i = 0; i < incomeJsonArray.length(); i++) {  // **line 2**
                 JSONObject childJSONObject = incomeJsonArray.getJSONObject(i);
                 int nn     = childJSONObject.getInt("nn");
                 int sn     = childJSONObject.getInt("sn");
                 JSONArray an = childJSONObject.getJSONArray("an");
                 String ed     = childJSONObject.getString("ed");
-                String aoid     = childJSONObject.getString("aoid");
-                this.newCoins[i] = new CloudCoin( nn, sn, toStringArray(an), ed, aoid, security );//security should be change or keep for pans.
+                JSONArray aoid = childJSONObject.getJSONArray("aoid");
+                String[] aoids = toStringArray(aoid);
+                //this.newCoins[i] = new CloudCoin( nn, sn, toStringArray(an), ed, aoid, security );//This could cause memory issues.   
+                tempCoin = new CloudCoin( nn, sn, toStringArray(an), ed, aoids );//security should be change or keep for pans.
+                tempCoin.saveCoin(extension);//Could be income or bank
                 //System.out.println("bank: New coin "+ i +" created " + this.newCoins[i].sn + ", ans[0] =" + this.newCoins[i].ans[0]);
                 //System.out.println("bank: [0] coin 0 created " + this.newCoins[0].sn + ", ans[0] =" + this.newCoins[0].ans[0]);
-                // System.out.println( "Loading Coin: nn " + nn + ", sn " + sn + ", ed " + ed + ", aoid " + aoid );
+                 System.out.println( "Loading Coin: nn " + nn + ", sn " + sn + ", ed " + ed + ", aoid " + aoid );
             }//end for each coin
-
+           isSuccessful = true;
         }catch( JSONException ex)
         {
-            System.out.println("Error: " + ex);
+            System.out.println("Stack File Corrupt. See CloudCoin file api and edit your stack file: " + ex);
 
         }//try 
-
+          return isSuccessful;
     }//end load income
 
     public String loadJSON( String jsonfile) throws FileNotFoundException {
@@ -228,7 +257,7 @@ public class Bank
             br = new BufferedReader(new FileReader( jsonfile ));
             while ((line = br.readLine()) != null) {
                 jsonData += line + "\n";
-            }
+           }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -259,7 +288,7 @@ public class Bank
      * @parameter newExtension The new extension to be give the file
      * @return boolean True if the extension is changes otherwise false. 
      */
-    public static boolean renameFileExtension(String source, String newExtension){
+    public boolean renameFileExtension(String source, String newExtension){
         String target;
         String currentExtension = getFileExtension(source);
 
@@ -277,7 +306,7 @@ public class Bank
      * @parameter f The filename
      * @return ext The file extention 
      */
-    public static String getFileExtension(String f) {
+    public String getFileExtension(String f) {
         String ext = "";
         int i = f.lastIndexOf('.');
         if (i > 0 &&  i < f.length() - 1) {
@@ -291,15 +320,19 @@ public class Bank
      * @parameter directoryPath The location of the directory to be scanned
      * @return filenames The names of all the files in the directory
      */
-    public String[] selectAllFileNamesInFolder(String directoryPath) {
+    public String[] selectAllFileNamesInFolder(String directoryPath, String extention) {
         File dir = new File(directoryPath);
+        String candidateFileExt = "";
         Collection<String> files  =new ArrayList<String>();
         if(dir.isDirectory()){
             File[] listFiles = dir.listFiles();
 
             for(File file : listFiles){
-                if(file.isFile()) {
-                    files.add(file.getName());
+                if(file.isFile()) {//Only add files with the matching file extension
+                    candidateFileExt = getFileExtension( file.getName() );
+                    if ( candidateFileExt.equalsIgnoreCase(extention) ){
+                         files.add(file.getName());
+                    }//end if it is correct file ext.
                 }
             }
         }
@@ -336,4 +369,39 @@ public class Bank
         return writeGood;
     }//end string to file 
 
+    
+    public boolean exportAllJson( String path, String tag, String rootFolder, String extension ){
+       boolean jsonExported = true;
+       int totalSaved = 0;
+       String[] fileNames  = selectAllFileNamesInFolder(rootFolder, extension);
+  
+        String json = "{ \"cloudcoin\": [";
+        for(int i =0; i< fileNames.length; i++ ){
+           if( i !=0 ){ json += ",\n";} 
+           totalSaved += exportCoins[i].getDenomination();
+           json += exportCoins[i].setJSON();   
+        }//for each 1 note
+        json += "]}";
+
+        /* FIGURE OUT NEW STACK NAME AND SAVE TO FILE */
+        String filename = path + File.separator + totalSaved +".CloudCoins." + tag + "."+  extension ;
+        if(  ifFileExists(filename)){//tack on a random number if a file already exists with the same tag
+            //Add random 
+            Random rnd = new Random();
+            int tagrand = rnd.nextInt(999);
+            filename = path + File.separator + totalSaved +".CloudCoins." + tag + tagrand + "." + extension;
+        }//end if file exists
+        System.out.println("Writing to : " + filename);
+        
+        if ( stringToFile( json, filename ) ){
+             /* DELETE EXPORTED CC FROM BANK */ 
+            for(int cc = 0; cc < exportCoins.length; cc++){
+                // System.out.println("Deleting "+ path + coinsToDelete[cc].fileName + "bank");
+                exportCoins[cc].deleteCoin( rootFolder, extension );
+            }//end for
+        }else{//Write Failed
+        jsonExported = false;
+        }//end if write was good
+       return jsonExported;
+    }//end export
 }

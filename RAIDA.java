@@ -1,8 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.*;
-import org.json.JSONException;
-import org.json.JSONObject;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -93,6 +91,7 @@ public class RAIDA
     public String echo(){
         String html ="error";
         String url = this.fullUrl + "echo";//." + this.ext;
+        
         Instant before = Instant.now();
         try{
             html = getHtml(url);
@@ -137,15 +136,16 @@ public class RAIDA
         }
     }//end echo
 
-    public String detect(CloudCoin cc ){
+    public String detect(CloudCoin cc){
+        
         String returnString = "";
-        if( this.status.equals("ready")){
-
+        if( this.status.equals("ready")){/*IF THE RAIDA IS UP AND READY*/
             String html ="error";
             String url = this.fullUrl + "detect?nn=" + cc.nn + "&sn=" + cc.sn + "&an=" + cc.ans[RAIDANumber] + "&pan=" + cc.pans[RAIDANumber]  + "&denomination=" + cc.getDenomination();
             // System.out.print( ".  Raida number " + RAIDANumber );
-            // System.out.println(url);
+             System.out.println("\n Request: " + url);
             Instant before = Instant.now();
+            
             try{
                 html = getHtml(url);
              //   System.out.println( html );
@@ -158,56 +158,37 @@ public class RAIDA
             Instant after = Instant.now();
             this.lastJsonRaFromServer = html;
             this.dms = Duration.between(before, after).toMillis();
-            if( html.contains("pass") ){ 
+            if( html.contains("pass") )
+            { 
                 lastDetectStatus = "pass";
                 cc.ans[RAIDANumber] = cc.pans[RAIDANumber];
-            }else if( html.contains("fail") && html.length() < 200 )//less than 200 incase their is a fail message inside errored page
+                cc.calcExpirationDate();
+            }
+            else if( html.contains("fail") && html.length() < 200 )//less than 200 incase their is a fail message inside errored page
             {  lastDetectStatus = "fail"; 
-            }else { lastDetectStatus = "error"; }
-            return lastDetectStatus + "\n Request: "  +  url + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process i mstest: "+ this.dms; 
+            
+            }
+            else
+            { 
+                lastDetectStatus = "error"; 
+            }
+            return lastDetectStatus + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process i mstest: "+ this.dms; 
         }//end if status not ready. 
          return "RAIDA" + cc.ans[RAIDANumber] +" cannot be detected because it failed to echo."; 
     }//end detect
 
-    /***
-     * This is used to test the functionliy of the detect system. The an of
-     * This might not be used by anything. 
-     */
-    public void detect( ){
-        //if( this.status.equals("ready")){
-
-            String html ="error";
-            String url = this.fullUrl + "detect?nn=1&sn=3&an=391cde155abe4c9d81a646b601d02ba6&pan=391cde155abe4c9d81a646b601d02ba6&denomination=1";
-            // System.out.print( ".  Raida number " + RAIDANumber );
-          //  System.out.println(url);
-            Instant before = Instant.now();
-            try{
-                html = getHtml(url);
-               // System.out.println( html );
-            }catch( IOException ex ){
-                System.out.println( ex );
-                lastDetectStatus = "error";
-            }
-            Instant after = Instant.now();
-            this.lastJsonRaFromServer = html;
-            this.dms = Duration.between(before, after).toMillis();
-            if( html.contains("pass") ){ 
-                lastDetectStatus = "pass";
-            }else if( html.contains("fail") ){  lastDetectStatus = "fail"; 
-            }else { lastDetectStatus = "error"; }
-       // }//end if status not ready. 
-    }//end detect
-
     public String get_ticket( String an, int nn, int sn, int denomination  ){
+        //Will only use ans to fix
         String returnStatus ="";
         this.lastTicket = "none";
         String url = fullUrl + "get_ticket?nn="+nn+"&sn="+sn+"&an="+an+"&pan=" +an+ "&denomination="+denomination;
-        //System.out.println( url );
+        System.out.println("\n Request: " + url );
 
         String html = "";
         Instant before = Instant.now();
         try{
             html = getHtml(url);
+            
             JSONObject o = new JSONObject( html );
             this.lastTicketStatus = o.getString("status");
             String message = o.getString("message");
@@ -231,14 +212,14 @@ public class RAIDA
         this.lastJsonRaFromServer = html;
         this.dms = Duration.between(before, after).toMillis();
         //System.out.println(html);
-        return returnStatus + "\n Request: "  +  url + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms; 
+        return returnStatus + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms; 
     }//end get ticket
 
     public String get_ticket( CloudCoin cc ){
         String returnStatus = "";
         this.lastTicket = "none";
         String url = fullUrl + "get_ticket?nn="+cc.nn+"&sn="+cc.sn+"&an="+cc.ans[RAIDANumber]+"&pan="+cc.pans[RAIDANumber]+"&denomination="+ cc.getDenomination();
-        // System.out.println( url );
+        System.out.println("\n Request: "  +  url );
 
         String html = "";
         Instant before = Instant.now();
@@ -264,7 +245,7 @@ public class RAIDA
         Instant after = Instant.now();
         this.lastJsonRaFromServer = html;
         this.dms = Duration.between(before, after).toMillis();
-        return returnStatus + "\n Request: "  +  url + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms: "+ this.dms; 
+        return returnStatus +  "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms: "+ this.dms; 
     }//end get ticket
 
     public String testHint( CloudCoin cc){
@@ -273,7 +254,7 @@ public class RAIDA
         get_ticket(cc);
         if( lastTicketStatus.equalsIgnoreCase("ticket")){
             String url = fullUrl + "hints?rn=" + this.lastTicket;
-            //System.out.println( url );
+            System.out.println( "\n Request: "  +  url   );
             String html = "";
             Instant before = Instant.now();
             try{
@@ -285,7 +266,7 @@ public class RAIDA
             }
             Instant after = Instant.now();
             this.dms = Duration.between(before, after).toMillis();
-           return returnStatus + "\n Request: "  +  url + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms;  
+           return returnStatus + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms;  
         }else{//Getting ticket failed
             return "Get_ticket failed on this RAIDA so hints could not be checked.";
         }//end if ticket was got
@@ -301,7 +282,7 @@ public class RAIDA
         int f3 = ans[2];
         String url = fullUrl;
         url += "fix?fromserver1="+f1+"&message1="+m1+"&fromserver2="+f2+"&message2="+m2+"&fromserver3="+f3+"&message3="+m3+"&pan="+pan;
-        System.out.println( url );
+        System.out.println("\n Request: "  +  url );
         Instant before = Instant.now();
         try{
             this.lastJsonRaFromServer = getHtml(url);
@@ -317,7 +298,7 @@ public class RAIDA
             return "success"; 
         }
         this.dms = Duration.between(before, after).toMillis();
-        return lastFixStatus + "\n Request: "  +  url + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms; 
+        return lastFixStatus +  "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms; 
     }//end fixit
 
     public void dumpvar(){

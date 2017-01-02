@@ -2,22 +2,20 @@ import java.util.Arrays;
 import java.security.SecureRandom;
 import java.util.concurrent.*;
 import java.util.Random;
-import org.json.JSONException;
-import org.json.JSONObject;
 import java.util.List;
 import java.io.*;
 import java.util.ArrayList;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import org.json.JSONArray;
+
 import java.io.PrintWriter;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 //import org.json.*;
 public class CommandInterpreter{
     /* Load items for all methods to share*/
-    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();//For generating PANs (Proposed Authenticity Numbers)
+    //final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();//For generating PANs (Proposed Authenticity Numbers)
     public static KeyboardReader reader = new KeyboardReader();
     public static StateManager stateManager = new StateManager();
     //private static ActivityLogger log = new ActivityLogger();
@@ -42,7 +40,8 @@ public class CommandInterpreter{
     public static RAIDA[] raidaArray = new RAIDA[25];
     public static String testCoinName = rootFolder + "1.CloudCoin.1.127002.test";
     public static String prompt = "Start Mode";
-
+    public static ExecutorService executor = Executors.newFixedThreadPool(25);
+    public static ExecutorService executor3 = Executors.newFixedThreadPool(3);
     public static void main(String[] args) {
 
         printWelcome();
@@ -77,76 +76,114 @@ public class CommandInterpreter{
             {     
 
                 case "show coins":
-                showCoins();
+                    showCoins();
+                break;
+                
+                case "export all":
+                    System.out.println("Which type of coin do you want to export all of?");
+                    System.out.println("1. bank (all authentic coins)");
+                    System.out.println("2. lost coins");
+                    System.out.println("3. Counterfeit coins");
+                    System.out.println("4. Fracked Coins");
+                    System.out.println("5. Income (Coins that have not been detected yet)");
+                    //String[] answers = {"bank","lost","counterfeit","fracked","income"};
+                    int exportAll = reader.readInt( 1, 5 );
+                    System.out.println("What is the path and folder you want to store it in? eg. c:\\temp");
+                    String jsonpath2 = reader.readString(false);
+                     System.out.println("What tag will you add to the file?");
+                     String tag2 = reader.readString(false);
+                    
+                    switch( exportAll ){
+                        case 1: 
+                            bank.exportCoins = bank.loadCoins( rootFolder, "bank");
+                            bank.exportAllJson(jsonpath2, tag2, rootFolder, "bank");
+                        break;
+                        case 2:
+                          bank.exportCoins = bank.loadCoins( rootFolder ,"lost");
+                          bank.exportAllJson(jsonpath2, tag2, rootFolder, "lost");
+                        break;
+                        case 3: 
+                         bank.exportCoins = bank.loadCoins( rootFolder ,"counterfeit");
+                         bank.exportAllJson(jsonpath2, tag2, rootFolder, "counterfeit");
+                        break;
+                        case 4: 
+                         bank.exportCoins = bank.loadCoins( rootFolder ,"fracked");
+                         bank.exportAllJson(jsonpath2, tag2, rootFolder, "fracked");
+                        break;
+                        case 5: 
+                        bank.exportCoins = bank.loadCoins( rootFolder ,"income");
+                         bank.exportAllJson(jsonpath2, tag2, rootFolder, "income");
+                        break;
+                    }//export all
                 break;
                 /*EXPORT*/
                 case "export":
-                // System.out.println("Root folder is " + rootFolder);
-                bank.bankedCoins = bank.loadCoins( rootFolder ,"bank");
-                int total_1 =  bank.countCoins( bank.bankedCoins, 1 );
-                int total_5 =  bank.countCoins( bank.bankedCoins, 5 );
-                int total_25 =  bank.countCoins( bank.bankedCoins, 25 );
-                int total_100 =  bank.countCoins( bank.bankedCoins, 100 );
-                int total_250 =  bank.countCoins( bank.bankedCoins, 250 );
-
-                System.out.println("Your Bank Inventory:");
-                System.out.println("  1s: "+ total_1);
-                System.out.println("  5s: "+ total_5);
-                System.out.println(" 25s: "+ total_25 );
-                System.out.println("100s: "+ total_100);
-                System.out.println("250s: "+ total_250 );
-                //get all names in the folder
-                //state how many 1, 5, 25, 100 and 250
-                int exp_1, exp_5, exp_25, exp_100, exp_250;
-                exp_1 = 0;
-                exp_5 = 0;
-                exp_25 = 0;
-                exp_100 = 0;
-                exp_250 = 0;
-
-                System.out.println("Do you want to export your CloudCoin to (1)jpgs or (2) stack (JSON) file?");
-                int file_type = reader.readInt(1,2 ); //1 jpg 2 stack
-
-                if( total_1 > 0 ){
-                    System.out.println("How many 1s do you want to export?");
-                    exp_1 = reader.readInt(0,total_1 );
-                }//if 1s not zero 
-                if( total_5 > 0 ){
-                    System.out.println("How many 5s do you want to export?");
-                    exp_5 = reader.readInt(0,total_5 );
-                }//if 1s not zero 
-                if( total_25 > 0 ){
-                    System.out.println("How many 25s do you want to export?");
-                    exp_25 = reader.readInt(0,total_25 );
-                }//if 1s not zero 
-                if( total_100 > 0 ){
-                    System.out.println("How many 100s do you want to export?");
-                    exp_100 = reader.readInt(0,total_100 );
-                }//if 1s not zero 
-                if( total_250 > 0 ){
-                    System.out.println("How many 250s do you want to export?");
-                    exp_250 = reader.readInt(0,total_250 );
-                }//if 1s not zero 
-
-                //move to export
-                System.out.println("What is the path and folder you want to store it in? eg. c:\\temp");
-                String jsonpath = reader.readString(false);
-                System.out.println("What tag will you add to the file?");
-                String tag = reader.readString(false);
-
-                if( file_type == 2){
-                    bank.exportJson(exp_1, exp_5, exp_25, exp_100, exp_250, jsonpath, tag, rootFolder);
-                    //stringToFile( json, "test.txt");
-                }else{
-                    bank.exportJpeg(exp_1, exp_5, exp_25, exp_100, exp_250, jsonpath, tag, rootFolder);
-
-                }//end if type jpge or stack
-
-                System.out.println("Exporting CloudCoins Completed.");
+                    // System.out.println("Root folder is " + rootFolder);
+                    bank.bankedCoins = bank.loadCoins( rootFolder ,"bank");
+                    int total_1 =  bank.countCoins( bank.bankedCoins, 1 );
+                    int total_5 =  bank.countCoins( bank.bankedCoins, 5 );
+                    int total_25 =  bank.countCoins( bank.bankedCoins, 25 );
+                    int total_100 =  bank.countCoins( bank.bankedCoins, 100 );
+                    int total_250 =  bank.countCoins( bank.bankedCoins, 250 );
+    
+                    System.out.println("Your Bank Inventory:");
+                    System.out.println("  1s: "+ total_1);
+                    System.out.println("  5s: "+ total_5);
+                    System.out.println(" 25s: "+ total_25 );
+                    System.out.println("100s: "+ total_100);
+                    System.out.println("250s: "+ total_250 );
+                    //get all names in the folder
+                    //state how many 1, 5, 25, 100 and 250
+                    int exp_1, exp_5, exp_25, exp_100, exp_250;
+                    exp_1 = 0;
+                    exp_5 = 0;
+                    exp_25 = 0;
+                    exp_100 = 0;
+                    exp_250 = 0;
+    
+                    System.out.println("Do you want to export your CloudCoin to (1)jpgs or (2) stack (JSON) file?");
+                    int file_type = reader.readInt(1,2 ); //1 jpg 2 stack
+    
+                    if( total_1 > 0 ){
+                        System.out.println("How many 1s do you want to export?");
+                        exp_1 = reader.readInt(0,total_1 );
+                    }//if 1s not zero 
+                    if( total_5 > 0 ){
+                        System.out.println("How many 5s do you want to export?");
+                        exp_5 = reader.readInt(0,total_5 );
+                    }//if 1s not zero 
+                    if( total_25 > 0 ){
+                        System.out.println("How many 25s do you want to export?");
+                        exp_25 = reader.readInt(0,total_25 );
+                    }//if 1s not zero 
+                    if( total_100 > 0 ){
+                        System.out.println("How many 100s do you want to export?");
+                        exp_100 = reader.readInt(0,total_100 );
+                    }//if 1s not zero 
+                    if( total_250 > 0 ){
+                        System.out.println("How many 250s do you want to export?");
+                        exp_250 = reader.readInt(0,total_250 );
+                    }//if 1s not zero 
+    
+                    //move to export
+                    System.out.println("What is the path and folder you want to store it in? eg. c:\\temp");
+                    String jsonpath = reader.readString(false);
+                    System.out.println("What tag will you add to the file?");
+                    String tag = reader.readString(false);
+    
+                    if( file_type == 2){
+                        bank.exportJson(exp_1, exp_5, exp_25, exp_100, exp_250, jsonpath, tag, rootFolder);
+                        //stringToFile( json, "test.txt");
+                    }else{
+                        bank.exportJpeg(exp_1, exp_5, exp_25, exp_100, exp_250, jsonpath, tag, rootFolder);
+    
+                    }//end if type jpge or stack
+    
+                    System.out.println("Exporting CloudCoins Completed.");
                 break;
 
                 case "quit":
-                System.out.println("Goodbye!"); System.exit(0);
+                    System.out.println("Goodbye!"); System.exit(0);
                 break;
 
                 case "show raida":
@@ -160,39 +197,39 @@ public class CommandInterpreter{
                 break;
 
                 case "db test":
-                setRaidaTestStatus();
-                for(int i = 0; i < 25;i++){System.out.println("RAIDA"+ i +": "+ raidaArray[i].testStatus +", ms:" + raidaArray[i].ms );}//end for each raida status
-                break;
-
-                case "dump raida":
-                int dr = 0;
-                while( true )//end while keep looping
-                {
-
-                    System.out.println("What RAIDA # do you want to dump? Enter 25 to end");
-                    System.out.print("dump>");
-                    dr = reader.readInt(0,25);
-                    if( dr == 25){break;}
-                    raidaArray[dr].dumpvar();
-                }
+                    setRaidaTestStatus();
+                    for(int i = 0; i < 25;i++){System.out.println("RAIDA"+ i +": "+ raidaArray[i].testStatus +", ms:" + raidaArray[i].ms );}//end for each raida status
+                    break;
+    
+                    case "dump raida":
+                    int dr = 0;
+                    while( true )//end while keep looping
+                    {
+    
+                        System.out.println("What RAIDA # do you want to dump? Enter 25 to end");
+                        System.out.print("dump>");
+                        dr = reader.readInt(0,25);
+                        if( dr == 25){break;}
+                        raidaArray[dr].dumpvar();
+                    }
                 break;
 
                 case "test detect":
-                System.out.println("Loading test coin: " + testCoinName );
-                CloudCoin testCoinDetect = new CloudCoin(testCoinName);
-                while( true){
-                    System.out.println("What RAIDA # do you want to test detection for? Enter 25 to end.");
-                    System.out.print("detect>");
-                    int ticketID = reader.readInt(0,25);
-                    if( ticketID == 25){break;}
-                    System.out.println( raidaArray[ticketID].detect( testCoinDetect) );
-                }//end while keep looping
-
+                    System.out.println("Loading test coin: " + testCoinName );
+                    CloudCoin testCoinDetect = new CloudCoin( testCoinName );
+                    while( true){
+                        System.out.println("What RAIDA # do you want to test detection for? Enter 25 to end.");
+                        System.out.print("detect>");
+                        int ticketID = reader.readInt(0,25);
+                        if( ticketID == 25){break;}
+                        System.out.println( raidaArray[ticketID].detect( testCoinDetect ) );
+                    }//end while keep looping
                 break;
 
                 case "test get_ticket":
                 System.out.println("Loading test coin: " + testCoinName );
-                testCoin = new CloudCoin(testCoinName);
+                testCoin = new CloudCoin(testCoinName );
+                System.out.println("nn of test coin is: " + testCoin.nn );
                 while( true){
                     System.out.println("What RAIDA # do you want to get ticket for? Enter 25 to end.");
                     System.out.print("get ticket>");
@@ -203,212 +240,214 @@ public class CommandInterpreter{
                 break;
 
                 case "test hints":
-                System.out.println("Loading test coin: " + testCoinName );
-                testCoin = new CloudCoin(testCoinName);
-                int hintsID = 0;
-                while( true){
-                    System.out.println("What RAIDA # do you want test hints for? Enter 25 to end.");
-                    System.out.print("test hints>");
-                    hintsID = reader.readInt(0,25);
-                    if( hintsID == 25){break;}
-                    System.out.println( raidaArray[hintsID].testHint(testCoin) );
-                    // System.out.println("What RAIDA # do you want to get ticket? Enter 25 to end");
-                }//end while keep looping
+                    System.out.println("Loading test coin: " + testCoinName );
+                    testCoin = new CloudCoin(testCoinName);
+                    int hintsID = 0;
+                    while( true){
+                        System.out.println("What RAIDA # do you want test hints for? Enter 25 to end.");
+                        System.out.print("test hints>");
+                        hintsID = reader.readInt(0,25);
+                        if( hintsID == 25){break;}
+                        System.out.println( raidaArray[hintsID].testHint(testCoin) );
+                        // System.out.println("What RAIDA # do you want to get ticket? Enter 25 to end");
+                    }//end while keep looping
                 break;
 
                 case "test fix":  
-
-                while( true){
-                    System.out.println("What RAIDA # do you want to fix? Enter 25 to end.");
-                    System.out.print("fix>");
-                    int guid_idful = reader.readInt(0,25);
-                    if( guid_idful == 25){break;}
-                    System.out.println("What RAIDA triad do you want to use? 1.Upper-Left, 2.Upper-Right, 3.Lower-Left, 4.Lower-Right");
-                    int cornerID = reader.readInt(1,4);
-                    testCoin = new CloudCoin( testCoinName );
-                    FixitHelper testFUL= new FixitHelper(guid_idful, testCoin, true);
-                    testFUL.setCornerToTest(cornerID);
-                    boolean hasTickets =  hasTickets = getTickets( testFUL.currentTriad, testFUL.currentAns, testCoin.nn, testCoin.sn, testCoin.getDenomination() ); //This test uses coin Network number 3, sn number 3 and denomination 1 to do the test. 
-                    if( hasTickets ){
-                        System.out.println( raidaArray[guid_idful].fix( testFUL.currentTriad, raidaArray[testFUL.currentTriad[0]].lastTicket, raidaArray[testFUL.currentTriad[1]].lastTicket, raidaArray[testFUL.currentTriad[2]].lastTicket, testCoin.ans[guid_idful]));
-
-                    }else{//No tickets, go to next triad
-                        System.out.println("Trusted Servers failed to help RAIDA " + guid_idful +". Fix may still work." );
-                    }//all the tickets are good. 
-                }//end while keep looping
+    
+                    while( true){
+                        System.out.println("What RAIDA # do you want to fix? Enter 25 to end.");
+                        System.out.print("fix>");
+                        int guid_idful = reader.readInt(0,25);
+                        if( guid_idful == 25){break;}
+                        System.out.println("What RAIDA triad do you want to use? 1.Upper-Left, 2.Upper-Right, 3.Lower-Left, 4.Lower-Right");
+                        int cornerID = reader.readInt(1,4);
+                        testCoin = new CloudCoin( testCoinName );
+                        FixitHelper testFUL= new FixitHelper(guid_idful, testCoin, true);
+                        testFUL.setCornerToTest(cornerID);
+                        boolean hasTickets =  hasTickets = getTickets( testFUL.currentTriad, testFUL.currentAns, testCoin.nn, testCoin.sn, testCoin.getDenomination() ); //This test uses coin Network number 3, sn number 3 and denomination 1 to do the test. 
+                        if( hasTickets ){
+                            System.out.println( raidaArray[guid_idful].fix( testFUL.currentTriad, raidaArray[testFUL.currentTriad[0]].lastTicket, raidaArray[testFUL.currentTriad[1]].lastTicket, raidaArray[testFUL.currentTriad[2]].lastTicket, testCoin.ans[guid_idful]));
+    
+                        }else{//No tickets, go to next triad
+                            System.out.println("Trusted Servers failed to help RAIDA " + guid_idful +". Fix may still work." );
+                        }//all the tickets are good. 
+                    }//end while keep looping
                 break;
 
                 case "import":
-                int totalValueToBank = 0;
-                int totalValueToCounterfeit = 0;
-                int totalValueToFractured = 0;
-                int totalValueLost = 0;
+                    int totalValueToBank = 0;
+                    int totalValueToCounterfeit = 0;
+                    int totalValueToFractured = 0;
+                    int totalValueLost = 0;
+    
+                    System.out.println("What is the path and name of the file you want to load?");
+                    String loadFileName = reader.readString( false );   
+                    //load the coins into an array of coin objects
+                    if( !bank.ifFileExists(loadFileName)){
+                        System.out.println( loadFileName + " not found. Please check your file name and try again."); 
+                        break;
+                    }
+    
+                    String extension = "";
+                    int indx = loadFileName.lastIndexOf('.');
+                    if (indx > 0) {
+                        extension = loadFileName.substring(indx+1);
+                    }
+                    extension = extension.toLowerCase();
+                    boolean jpg = false;
+                    if ( extension.equals("jpeg") || extension.equals("jpg")){ jpg =true;   }
+    
+                   // System.out.println("How do you want to import coins into your bank?");
+                   // System.out.println("1. Change all Authenticity Numbers (take ownership) - high Security.");
+                    //System.out.println("2. Keep all Authenticity Numbers the same (just check authenticy) - trust last owner.");
+                   // int mode = reader.readInt(1,2);
+    
+                   // String security = "random";
+                  //  switch(mode){
+                   //     case 1: 
+                        if( jpg ){
+                            if( ! bank.loadJpeg( loadFileName )){ 
+                                System.out.println("Failed to load JPEG file");
+                                break;}
+                        }else{
+                            if( ! bank.loadIncome( loadFileName, "income")){ 
+                                System.out.println("Failed to load CloudCoin file");
+                                break;
+                            }
+                        }//end if jpg
+                    
+    
+                    //change imported file to have a .imported extention
+                    bank.renameFileExtension(loadFileName, "imported" );
 
-                System.out.println("What is the path and name of the file you want to load?");
-                String loadFileName = reader.readString( false );   
-                //load the coins into an array of coin objects
-                if( !bank.ifFileExists(loadFileName)){
-                    System.out.println( loadFileName + " not found. Please check your file name and try again."); 
-                    break;
-                }
-
-                System.out.println("How do you want to import coins into your bank?");
-                System.out.println("1. Change all Authenticity Numbers (take ownership) - high Security.");
-                System.out.println("2. Keep all Authenticity Numbers the same (just check authenticy) - trust last owner.");
-                int mode = reader.readInt(1,2);
-                System.out.println("Do you want to (1) import in mass or (2)inspect each coin that is imported?");
-                int inspectionMode = reader.readInt(1,2);
-                switch(mode){
-                    case 1: 
-                    bank.loadIncome( loadFileName, "random" );//Keep means do not chage ANs, Change means use High Security
-                    break;
-                    case 2: 
-                    bank.loadIncome( loadFileName, "keep" );//Keep means do not chage ANs, Change means use High Security
-                    break;
-                }
-                
-                //save the coins to the bank file with an .income extension
-                for( int ii = 0; ii< bank.newCoins.length ; ii++ ){
-                    bank.newCoins[ii].saveCoin("income");
-                }//end for
-
-                //change imported file to have a .imported extention
-                bank.renameFileExtension(loadFileName, "imported" );
-                System.out.println("Results:");
-
-                /*COINS IMPORTED, NOW WE START TESTING COINS */
-                //LOAD THE .income COINS ONE AT A TIME AND TEST THEM
-                bank.importedCoins = bank.loadCoins( rootFolder,"income");//Load Coins from hard drive into RAM
-
-                System.out.println("Loaded " + bank.importedCoins.length + " income files");
-                int RAIDAHealth = 25;
-                //Now the coin has been fixed. See if there were some improvements. 
-      
-                for(int j = 0; j < bank.importedCoins.length; j++){
-                   
-                    System.out.println("Detecting SN #"+bank.importedCoins[j].sn +", Denomination: "+ bank.importedCoins[j].getDenomination() );
-                    detectCoin( bank.importedCoins[j] );//Checks all 25 GUIDs in the Coin and sets the status. 
-                    // System.out.println("Finished detecting coin index " + j);
-                    //PRINT OUT ALL COIN'S RAIDA STATUS AND SET AN TO NEW PAN
-                    System.out.println("");
-                    System.out.println("CloudCoin SN #"+bank.importedCoins[j].sn +", Denomination: "+ bank.importedCoins[j].getDenomination() );
-                     RAIDAHealth = 25;
-                     bank.importedCoins[j].hp=25;
-                    for(int i = 0; i < 25;i++){
-                        if ( i % 5 == 0 ) { System.out.println("");}//Give every five statuses a line break
-                        bank.importedCoins[j].pastStatus[i]= raidaArray[i].lastDetectStatus;
-                        if( raidaArray[i].lastDetectStatus == "pass"){    
-                            bank.importedCoins[j].ans[i] =  bank.importedCoins[j].pans[i] ; //Set the coin to show that it has a new AN
-                        }else if(raidaArray[i].lastDetectStatus == "fail"){ bank.importedCoins[j].hp--; }
-                        else{
-                            RAIDAHealth--;
-                        }//check if failed
-                        String fi = String.format("%02d", i);//Pad numbers with two digits
-                        System.out.print("RAIDA"+ fi +": "+ raidaArray[i].lastDetectStatus.substring(0,4) + " | " );
-                    }//End for each cloud coin GUID statu
-
-                    //SORT OUT EACH COIN INTO CATAGORIES
-                    System.out.println("\nRAIDA Health: " +RAIDAHealth + "/25");
-                    switch( sortCoin(bank.importedCoins[j], inspectionMode, RAIDAHealth )){
-                        case "bank": totalValueToBank++; break;
-                        case "fractured": totalValueToFractured++; break;
-                        case "lost": totalValueLost++; break;
-                        case "counterfeit": totalValueToCounterfeit++; break;
-                    }//end switch on the place the coin will go
-
-                    //NOW FIX FRACTURED IF IF NEEDED
-                    //  bank.loadCloudCoins("./Bank/","fractured");
-                }//end for each coin to import
-                //REPORT ON DETECTION OUTCOME
-                System.out.println("Results of Import:");
-                System.out.println("Good and Moved in Bank: "+ totalValueToBank);
-                System.out.println("Counterfeit and Moved to trash: "+totalValueToCounterfeit);
-                System.out.println("Fracked and Moved to Fracked: "+ totalValueToFractured);
-                System.out.println("Lost and Moved to Lost: "+ totalValueLost);
-
-                //fix fractured. 
-                //Fixed fraced later
-                //rename file to counterfeit   
+                    //LOAD THE .income COINS ONE AT A TIME AND TEST THEM
+                    String[] incomeFileNames  = bank.selectAllFileNamesInFolder( rootFolder, "income" );
+                    //bank.importedCoins = bank.loadCoins( rootFolder, "income" );//Load Coins from hard drive into RAM
+    
+                    System.out.println("Loaded " + incomeFileNames.length + " income files");
+                    int RAIDAHealth = 25;
+                    //Now the coin has been fixed. See if there were some improvements. 
+                    CloudCoin newCC;
+                    for(int j = 0; j < incomeFileNames.length; j++){
+                        newCC = new CloudCoin( rootFolder + incomeFileNames[j]);
+                        System.out.println("Detecting SN #"+ newCC.sn +", Denomination: "+ newCC.getDenomination() );
+                        detectCoin( newCC );//Checks all 25 GUIDs in the Coin and sets the status. 
+                        // System.out.println("Finished detecting coin index " + j);
+                        //PRINT OUT ALL COIN'S RAIDA STATUS AND SET AN TO NEW PAN
+                        System.out.println("");
+                        System.out.println("CloudCoin SN #"+newCC.sn +", Denomination: "+ newCC.getDenomination() );
+                        RAIDAHealth = 25;
+                        newCC.hp=25;
+                        for(int i = 0; i < 25;i++){
+                            if ( i % 5 == 0 ) { System.out.println("");}//Give every five statuses a line break
+                            newCC.pastStatus[i]= raidaArray[i].lastDetectStatus;
+                            if( raidaArray[i].lastDetectStatus == "pass")
+                            {    
+                                newCC.ans[i] = newCC.pans[i];//RAIDA health stays up
+                            }
+                            else if(raidaArray[i].lastDetectStatus == "fail")
+                            { 
+                                newCC.hp--; 
+                            }
+                            else{
+                                RAIDAHealth--;
+                            }//check if failed
+                            String fi = String.format("%02d", i);//Pad numbers with two digits
+                            System.out.print("RAIDA"+ fi +": "+ raidaArray[i].lastDetectStatus.substring(0,4) + " | " );
+                        }//End for each cloud coin GUID statu
+    
+                        //SORT OUT EACH COIN INTO CATAGORIES
+                        System.out.println("\nRAIDA Health: " +RAIDAHealth + "/25");
+                        switch( sortCoin(newCC, RAIDAHealth )){
+                            case "bank": totalValueToBank++; break;
+                            case "fractured": totalValueToFractured++; break;
+                            case "lost": totalValueLost++; break;
+                            case "counterfeit": totalValueToCounterfeit++; break;
+                        }//end switch on the place the coin will go 
+                        //NOW FIX FRACTURED IF IF NEEDED
+                        //  bank.loadCloudCoins("./Bank/","fractured");
+                    }//end for each coin to import
+                    //REPORT ON DETECTION OUTCOME
+                    System.out.println("Results of Import:");
+                    System.out.println("Good and Moved in Bank: "+ totalValueToBank);
+                    System.out.println("Counterfeit and Moved to trash: "+totalValueToCounterfeit);
+                    System.out.println("Fracked and Moved to Fracked: "+ totalValueToFractured);
+                    System.out.println("Lost and Moved to Lost: "+ totalValueLost);
+    
                 break;
 
                 case "fix fracked":
-                //Load coins from file in to banks fracked array
-                totalValueToBank = 0;
-                totalValueToFractured = 0;
-                totalValueLost = 0;
-                totalValueToCounterfeit=0;
-                bank.frackedCoins = bank.loadCoins( rootFolder,"fracked");
-                
-                System.out.println("Loaded " + bank.frackedCoins.length + " fracked files");
-                System.out.println("Do you want to (1) import in mass or (2)inspect each coin that is imported?");
-                int inspectionMode2 = reader.readInt(1,2);
-                /* LOOP THROUGH EVERY COIN THAT IS FRACKED */
-                for(int k = 0; k < bank.frackedCoins.length; k++){
-
-                    //bank.frackedCoins[k].reportStatus();
-                    System.out.println("Unfracking SN #"+bank.frackedCoins[k].sn +", Denomination: "+ bank.frackedCoins[k].getDenomination() );
-                    fixCoin( bank.frackedCoins[k] );//Checks all 25 GUIDs in the Coin and sets the status.
-
-                    //Check CloudCoin's hp. 
-                    int RAIDAHealth2 = 25;
-                    //Now the coin has been fixed. See if there were some improvements. 
-                    bank.frackedCoins[k].hp = 25;
-                    for(int i = 0; i < 25;i++){
-                        if ( i % 5 == 0 ) { System.out.println("");}//Give every five statuses a line break
-                        if( bank.frackedCoins[k].pastStatus[i] == "pass")
-                        {    
-                          //Keep ans because it is now good
-                        }
-                        else if(raidaArray[i].lastDetectStatus == "fail")
-                        { 
-                            bank.frackedCoins[k].hp--; 
-                        }
-                        else
-                        {
-                            RAIDAHealth2--;
-                        }//check if failed
-                        String fi = String.format("%02d", i);//Pad numbers with two digits
-                        System.out.print("RAIDA"+ fi +": "+ bank.frackedCoins[k].pastStatus[i].substring(0,4) + " | " );
-                    }//end switch on the place the coin will go
-                    System.out.println("\nRAIDA Health " + RAIDAHealth2 + "/25");
-                    switch( sortCoin( bank.frackedCoins[k], inspectionMode2, RAIDAHealth2)){
-                        case "bank": totalValueToBank++; break;
-                        case "fractured": totalValueToFractured++; break;
-                        case "lost": totalValueLost++; break;
-                        case "counterfeit": totalValueToCounterfeit++; break;
-                    }//end for each guid
-
-                }//end for each fracked coin
-                //REPORT ON DETECTION OUTCOME
-                System.out.println("Results of Fix Fractured:");
-                System.out.println("Good and Moved in Bank: "+ totalValueToBank);
-                System.out.println("Counterfeit and Moved to trash: "+totalValueToCounterfeit);
-                System.out.println("Still Fracked and Moved to Fracked: "+ totalValueToFractured);
-                System.out.println("Lost and Moved to Lost: "+ totalValueLost);
-
+                    //Load coins from file in to banks fracked array
+                    totalValueToBank = 0;
+                    totalValueToFractured = 0;
+                    totalValueLost = 0;
+                    totalValueToCounterfeit=0;
+                    bank.frackedCoins = bank.loadCoins( rootFolder,"fracked");
+    
+                    System.out.println("Loaded " + bank.frackedCoins.length + " fracked files");
+                 //   System.out.println("Do you want to (1) import in mass or (2)inspect each coin that is imported?");
+                  //  int inspectionMode2 = reader.readInt(1,2);
+                    /* LOOP THROUGH EVERY COIN THAT IS FRACKED */
+                    for(int k = 0; k < bank.frackedCoins.length; k++){
+    
+                        //bank.frackedCoins[k].reportStatus();
+                        System.out.println("Unfracking SN #"+bank.frackedCoins[k].sn +", Denomination: "+ bank.frackedCoins[k].getDenomination() );
+                        fixCoin( bank.frackedCoins[k] );//Checks all 25 GUIDs in the Coin and sets the status.
+    
+                        //Check CloudCoin's hp. 
+                        int RAIDAHealth2 = 25;
+                        //Now the coin has been fixed. See if there were some improvements. 
+                        bank.frackedCoins[k].hp = 25;
+                        for(int i = 0; i < 25;i++){
+                            if ( i % 5 == 0 ) { System.out.println("");}//Give every five statuses a line break
+                            if( bank.frackedCoins[k].pastStatus[i] == "pass")
+                            {    
+                                //Keep ans because it is now good
+                            }
+                            else if(raidaArray[i].lastDetectStatus == "fail")
+                            { 
+                                bank.frackedCoins[k].hp--; 
+                            }
+                            else
+                            {
+                                RAIDAHealth2--;
+                            }//check if failed
+                            String fi = String.format("%02d", i);//Pad numbers with two digits
+                            System.out.print("RAIDA"+ fi +": "+ bank.frackedCoins[k].pastStatus[i].substring(0,4) + " | " );
+                        }//end switch on the place the coin will go
+                        System.out.println("\nRAIDA Health " + RAIDAHealth2 + "/25");
+                        switch( sortCoin( bank.frackedCoins[k], RAIDAHealth2)){
+                            case "bank": totalValueToBank++; break;
+                            case "fractured": totalValueToFractured++; break;
+                            case "lost": totalValueLost++; break;
+                            case "counterfeit": totalValueToCounterfeit++; break;
+                        }//end for each guid
+    
+                    }//end for each fracked coin
+                    //REPORT ON DETECTION OUTCOME
+                    System.out.println("Results of Fix Fractured:");
+                    System.out.println("Good and Moved in Bank: "+ totalValueToBank);
+                    System.out.println("Counterfeit and Moved to trash: "+totalValueToCounterfeit);
+                    System.out.println("Still Fracked and Moved to Fracked: "+ totalValueToFractured);
+                    System.out.println("Lost and Moved to Lost: "+ totalValueLost);
                 break;
-
+                
+                
+                /*IMPORT CHEST*/
                 case "import chest":
-                System.out.println("What Uncirculated Chest would you like import? Include path and name like c:\\chests\\25000.CloudCoin.100UncirculatedStart16777116.Chest");
-                String path = reader.readString(false);
-                //Confirm that file exists
-                if( !bank.ifFileExists( path )){
-                    System.out.println( path + " not found. Please check your file name and try again."); 
-                    break;
-                }  
-                //load the coins into an array of coin objects
-                bank.loadIncome( path, "no" );//Keep means do not chage ANs, Change means use High Security, No means straight to bank no check. 
-
-                //save the coins to the bank file with an .income extension
-                for( int i = 0; i< bank.newCoins.length ; i++ ){
-                    // System.out.println("ComandInterpreter: " + bank.newCoins[i].sn + ", ans[0]=" + bank.newCoins[i].ans[0]);
-                    bank.newCoins[i].saveCoin("bank");
-                    System.out.print(".");
-                }//end for
-
-                System.out.println("Done importing into bank");
-                //change imported file to have a .imported extention
-                bank.renameFileExtension( path, "imported" );
+                    System.out.println("What Uncirculated Chest would you like import? Include path and name like c:\\chests\\25000.CloudCoin.100UncirculatedStart16777116.Chest");
+                    String path = reader.readString(false);
+                    //Confirm that file exists
+                    if( !bank.ifFileExists( path )){
+                        System.out.println( path + " not found. Please check your file name and try again."); 
+                        break;
+                    }  
+                    //load the coins into an array of coin objects
+                    bank.loadIncome( path, "bank");//Keep means do not chage ANs, Change means use High Security, No means straight to bank no check. 
+                    System.out.println("Done importing into bank");
+                    //change imported file to have a .imported extention
+                    bank.renameFileExtension( path, "imported" );
                 break;
 
                 /* CHANGE STATE */
@@ -423,7 +462,7 @@ public class CommandInterpreter{
                 break;
 
                 case "back": changeState("start"); prompt="Start Mode"; break;
-                
+
                 case "fracked mode": changeState("fracked"); prompt="Fracked Mode"; 
                 //System.out.println("\nEchoing RAIDA.");
                 loadRaida();
@@ -432,13 +471,13 @@ public class CommandInterpreter{
                 System.out.println("\nRAIDA Status:");
                 for(int i = 0; i < 25;i++){System.out.println("RAIDA"+ i +": "+ raidaArray[i].status +", ms:" + raidaArray[i].ms );}//end for each raida status
                 break;
-                
+
                 case "test mode":  changeState("test");prompt="Test Mode"; break;
-                
+
                 case "founder mode": changeState("founder"); prompt="Founder Mode"; break;
-                
+
                 default: System.out.println("Command failed. Try again."); break;
-                
+
             }//end switch
         }//end while
     }//end run method
@@ -452,6 +491,7 @@ public class CommandInterpreter{
         System.out.println("and without warranty of any kind.");
     }//End print welcome
 
+    
     /**
      * An example of a method - replace this comment with your own
      *
@@ -542,12 +582,12 @@ public class CommandInterpreter{
         taskList.add(callable1);
         taskList.add(callable2);
         //create a pool executor with 3 threads
-        ExecutorService executor = Executors.newFixedThreadPool(3);
+        //ExecutorService executor3 = Executors.newFixedThreadPool(3);
 
         try
         {
             //start the threads
-            List<Future<Void>> futureList = executor.invokeAll(taskList);
+            List<Future<Void>> futureList = executor3.invokeAll(taskList);
 
             for(Future<Void> voidFuture : futureList)
             {
@@ -591,7 +631,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[0].detect( newCoin );
+                    raidaArray[0].detect( newCoin);
                     System.out.print(".");
                     return null;
                 }
@@ -870,7 +910,7 @@ public class CommandInterpreter{
         taskList.add(callable24);
 
         //create a pool executor with 25 threads
-        ExecutorService executor = Executors.newFixedThreadPool(25);
+        //ExecutorService executor = Executors.newFixedThreadPool(25);
 
         try
         {
@@ -1208,7 +1248,7 @@ public class CommandInterpreter{
         taskList.add(callable24);
 
         //create a pool executor with 3 threads
-        ExecutorService executor = Executors.newFixedThreadPool(25);
+        //ExecutorService executor = Executors.newFixedThreadPool(25);
 
         try
         {
@@ -1546,7 +1586,7 @@ public class CommandInterpreter{
         taskList.add(callable24);
 
         //create a pool executor with 3 threads
-        ExecutorService executor = Executors.newFixedThreadPool(25);
+        //ExecutorService executor = Executors.newFixedThreadPool(25);
 
         try
         {
@@ -1598,6 +1638,8 @@ public class CommandInterpreter{
         switch( newState ){
 
             case "bank":  nextState = stateManager.currentState.getExit( "bank" );  
+            //Look and see if there are income files. 
+            //If yes ask the person if they want to finnish importing them. (Give them a command)
             System.out.println("Bank Mode:");
             System.out.println("Take ownership of other people's CloudCoins.");
             System.out.println("Fix fractured coins.");
@@ -1620,7 +1662,7 @@ public class CommandInterpreter{
         }//end switch
         stateManager.currentState = nextState;
     }//end changeState
-
+/*
     public static String[] generatePANs( ){
         SecureRandom random = new SecureRandom();
         byte bytes[] = new byte[16];
@@ -1642,7 +1684,7 @@ public class CommandInterpreter{
         }
         return new String(hexChars);
     }
-
+*/
     public static void fixCoin( CloudCoin brokeCoin ){
         //Make an array of broken coins or go throug each if broken fix
         int mode = 1;
@@ -1817,65 +1859,42 @@ public class CommandInterpreter{
 
     }//end show coins
 
-    public static String sortCoin( CloudCoin coin, int sortMode, int RAIDAHealth ){
+    public static String sortCoin( CloudCoin coin, int RAIDAHealth ){
         String returnString = "";
         coin.calculateHP();
         String grade = coin.gradeCoin();
         System.out.println("\nResults:" + grade );
         System.out.println("Health Points are: " + coin.hp +"/25");
-       if( sortMode == 2){
-        System.out.println("1.Autosort  2.Move to Bank  3.Keep in Fracked  4.Moved to Counterfeit 5.Move to lost" );
-        sortMode = reader.readInt(1,5);
-        }//end sortMode
-         
-        // if( sortMode == 6){return;}
-        switch( sortMode ){
-            case 1://Autosort
+        coin.calcExpirationDate();
+        System.out.println("Expiration Data is " + coin.ed);
+   
             //SORT OUT EACH COIN INTO CATAGORIES
             System.out.println("HP is: " + coin.hp );
             if( coin.hp > 24 && RAIDAHealth > 11 ){//No Problems Move to Bank
                 coin.saveCoin("bank");
-                coin.deleteCoin(rootFolder, "fracked");
+                coin.deleteCoin(rootFolder, "fracked");//The coin is being brought in from fracked or income
+                coin.deleteCoin(rootFolder, "income");
                 returnString ="bank";
             }
             else if( coin.hp > 9 )
             {//Can be fixed
                 coin.saveCoin("fracked");
                 coin.deleteCoin(rootFolder, "fracked");
+                coin.deleteCoin(rootFolder, "income");
                 returnString ="fracked";
                 //greater than 20, send to bank
             } else if( coin.hp > 1) {//Lost coin
                 coin.saveCoin("lost");
                 coin.deleteCoin(rootFolder,"fracked");
+                coin.deleteCoin(rootFolder,"income");//Could be comming from fracked or income
                 returnString ="lost";
             }else{ //Counterfeit - send to counterfeit
                 coin.saveCoin("counterfeit");
                 coin.deleteCoin(rootFolder,"fracked");
+                coin.deleteCoin(rootFolder,"income");//Could be comming from fracked or income
                 returnString ="counterfeit";
             }
-            break;
-            case 2://move to bank
-            coin.saveCoin("bank");
-            coin.deleteCoin(rootFolder, "fracked");
-            returnString ="bank";
-            break;
-            case 3://move to fracked
-            coin.saveCoin("fracked");
-            coin.deleteCoin(rootFolder, "fracked");
-            returnString ="fracked";
-            break;
-            case 4://move to countefeit
-            coin.saveCoin("counterfeit");
-            coin.deleteCoin(rootFolder,"fracked");
-            returnString ="counterfeit";
-            break;
-            case 5://move to lost
-            coin.saveCoin("lost");
-            coin.deleteCoin(rootFolder,"fracked");
-            returnString ="lost";
-            break;
-
-        }//end sort mode switch
+            
         return returnString;
     }//end grade coin
 }//EndMain

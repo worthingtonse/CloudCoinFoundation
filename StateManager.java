@@ -31,7 +31,7 @@ public class StateManager
               
             State import_mode = new State("Import mode");
             String im = "Import mode:";
-            
+
             State fracked_mode = new State("Fracked mode");
             State test_mode = new State("Test mode");
             State founder_mode = new State("Founder mode");
@@ -68,6 +68,7 @@ public class StateManager
         bank_mode.setCommand("import");
         bank_mode.setCommand("fracked mode");
         bank_mode.setCommand("export");
+        bank_mode.setCommand("export all");
         bank_mode.setCommand("back");
         bank_mode.setCommand("quit");
 
