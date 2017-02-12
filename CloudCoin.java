@@ -18,19 +18,51 @@ import java.nio.file.Files;
 public class CloudCoin
 {
     // instance variables - replace the example below with your own
+    /***
+     * Network Number. Should be 1 unless we add more networks
+     */
     public int nn;//Network Numbers
+    /***
+     * Serial Number 1 - 16,777,216
+     */
     public int sn;//Serial Number
+    /**
+     * Authenticity Numbers. 25 GUIDs without hyphens
+     */
     public String[] ans = new String[25] ;//Authenticity Numbers
+    /**
+     * Proposed Authenticity Numbers. 25 GUIDs without hyphens that will replace the ANs
+     */
     public String[] pans = new String[25] ;//Proposed Authenticty Numbers
+  /**
+   * This is the status of the last detection attempt for each of the 25 RAIDA: pass, fail, error or unknown
+   */
     public String[] pastStatus = new String[25] ;//fail, pass, error, unknown (could not connect to raida)
+    /**
+     * Expiration date: two years from last detection
+     */
     public String ed; //Expiration Date expressed as a hex string like 97e2 Sep 2016
+    /**
+     * Expiration date in the form of hexidecimal numbers to be stored in jpgs. First number is month. 
+     * last three numbers are the year. 
+     */
     public String edHex;//ed in hex form. 
+    /**
+     * Health or Hit Points. (1-25, One point for each server not failed). Every time a RAIDA says it is counterfeit the HP goes down.
+     */
     public int hp;//HitPoints (1-25, One point for each server not failed)
+    /**
+     * Added Owner Indexed Data: The owner of the coin can use this space to put an array of their own data. 
+     */
     public String[] aoid = new String[1] ;//Account or Owner ID
+    /**
+     * What the file should be named useing the .stack naming standard: CloudCoin JSON File Naming Convention: Total Amount of CloudCoins in file, ".CloudCoin" , then a random number or use defined tab in case there are other stack/chests with the same amount of CloudCoins separated by dots. The extension could be Chest or stack. Example: 12750.cloudcoin.mytag.stack. Stack files are for the public. Chest files are for founders uncirculated coins. 12750.cloudcoin.userTagHere.chest If the stack is full of counterfeit CloudCoins then it may have a .counterfeit extension. If the stack is full of lost coins then it may have the .lost extension. If the stack has a .fracked extension, it is full of fracked coins.
+     */
     public String fileName;
     public String json;
     public byte[] jpeg;
     public static final int YEARSTILEXPIRE = 2;
+    
 
     /**
      * Constructor for objects of class CloudCoin
@@ -489,6 +521,9 @@ public class CloudCoin
         return writeGood;
     }//end jpeg to file
 
+    
+    
+    
     public String gradeCoin(){
         int passed = 0;
         int failed = 0;
@@ -536,10 +571,14 @@ public class CloudCoin
             failedDesc = "Minority";
         }
         //Calcualte Other RAIDA Servers did not help. 
+        //Calcualte Other RAIDA Servers did not help. 
+        
+        
+        
         switch( other ){
             case 0: otherDesc = "RAIDA 100% good"; break;
             case 1: 
-            case 2: otherDesc = "Four or less RAIDA errors"; break;
+            case 2: otherDesc = "Four or less RAIDA errors";  break;
             case 3: 
             case 4: otherDesc = "Four or less RAIDA errors"; break;
             case 5: 
@@ -566,6 +605,23 @@ public class CloudCoin
             default: otherDesc = "FAILED TO EVALUATE RAIDA HEALTH"; break;
         }//end RAIDA other errors and unknowns
 
+      /*
+        if(){
+            if one 
+        if a majority say passed. passed
+        }else if(){
+        a majority say failed counterfiet
+        }else if(){
+         minority say passed 
+        }else{
+        
+        }//end if grades
+        grade = "Authentic";
+        grade = "Counterfeit";
+        grade = "Fracked";
+         grade = "Lost";
+        
+        */
         return  "\n " + passedDesc + " said Passed. " + "\n "+ failedDesc +" said Failed. \n RAIDA Status: "+ otherDesc;
     }//end grade coin
     public String loadJSON( String jsonfile) throws FileNotFoundException {

@@ -38,12 +38,16 @@ public class CommandInterpreter{
     public static int incomeTotalValueMoved = 0;
     public static String tagWhenMoving;
     public static RAIDA[] raidaArray = new RAIDA[25];
-    public static String testCoinName = rootFolder + "1.CloudCoin.1.127002.test";
+    public static String testCoinName = rootFolder + "1.CloudCoin.1.127083.test";
     public static String prompt = "Start Mode";
     public static ExecutorService executor = Executors.newFixedThreadPool(25);
     public static ExecutorService executor3 = Executors.newFixedThreadPool(3);
     public static void main(String[] args) {
 
+        for(int i=0; i< 25; i++){
+          raidaArray[i] = new RAIDA(i);
+        }//end for all raida
+        
         printWelcome();
         //Load up from files
         StateManager stateManager = new StateManager();
@@ -189,7 +193,7 @@ public class CommandInterpreter{
                 case "show raida":
                 case "test echo":
                 System.out.println("\nEchoing RAIDA.");
-                loadRaida();
+               // loadRaida();
                 setRaidaStatus();
                 //Get JSON from RAIDA Directory
                 System.out.println("\nRAIDA Status:");
@@ -222,7 +226,7 @@ public class CommandInterpreter{
                         System.out.print("detect>");
                         int ticketID = reader.readInt(0,25);
                         if( ticketID == 25){break;}
-                        System.out.println( raidaArray[ticketID].detect( testCoinDetect ) );
+                        System.out.println( raidaArray[ticketID].detect( testCoinDetect, false ) );
                     }//end while keep looping
                 break;
 
@@ -332,7 +336,7 @@ public class CommandInterpreter{
                     for(int j = 0; j < incomeFileNames.length; j++){
                         newCC = new CloudCoin( rootFolder + incomeFileNames[j]);
                         System.out.println("Detecting SN #"+ newCC.sn +", Denomination: "+ newCC.getDenomination() );
-                        detectCoin( newCC );//Checks all 25 GUIDs in the Coin and sets the status. 
+                        detectCoin( newCC,true);//Checks all 25 GUIDs in the Coin and sets the status. 
                         // System.out.println("Finished detecting coin index " + j);
                         //PRINT OUT ALL COIN'S RAIDA STATUS AND SET AN TO NEW PAN
                         System.out.println("");
@@ -454,7 +458,7 @@ public class CommandInterpreter{
                 case "escape":
                 case "bank mode": changeState("bank");prompt="Bank Mode";
                 System.out.println("\nEchoing RAIDA.");
-                loadRaida();
+                //loadRaida();
                 setRaidaStatus();
                 //Get JSON from RAIDA Directory
                 System.out.println("\nRAIDA Status:");
@@ -465,7 +469,7 @@ public class CommandInterpreter{
 
                 case "fracked mode": changeState("fracked"); prompt="Fracked Mode"; 
                 //System.out.println("\nEchoing RAIDA.");
-                loadRaida();
+               // loadRaida();
                 setRaidaStatus();
                 //Get JSON from RAIDA Directory
                 System.out.println("\nRAIDA Status:");
@@ -497,7 +501,7 @@ public class CommandInterpreter{
      *
      * @param  y   a sample parameter for a method
      * @return     the sum of x and y
-     */
+    
     public static void loadRaida() {
         String directoryJson = "blank";
         try{
@@ -539,7 +543,7 @@ public class CommandInterpreter{
         }
 
     }
-
+ */
     public static boolean getTickets( int[] triad, String[] ans, int nn, int sn, int denomination ){
         // String echo1 = raidaArray[0].echo());
         //create a callable for each method
@@ -623,7 +627,7 @@ public class CommandInterpreter{
 
     }//end get Ticket
 
-    public static void detectCoin( CloudCoin newCoin ){
+    public static void detectCoin( CloudCoin newCoin, boolean usePan ){
         // String echo1 = raidaArray[0].echo());
         //create a callable for each method
         Callable<Void> callable0 = new Callable<Void>()
@@ -631,7 +635,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[0].detect( newCoin);
+                    raidaArray[0].detect( newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -642,7 +646,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[1].detect(newCoin);
+                    raidaArray[1].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -653,7 +657,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[2].detect(newCoin);
+                    raidaArray[2].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -664,7 +668,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[3].detect(newCoin);
+                    raidaArray[3].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -674,7 +678,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[4].detect(newCoin);
+                    raidaArray[4].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -684,7 +688,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[5].detect(newCoin);
+                    raidaArray[5].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -694,7 +698,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[6].detect(newCoin);
+                    raidaArray[6].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -704,7 +708,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[7].detect(newCoin);
+                    raidaArray[7].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -714,7 +718,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[8].detect(newCoin);
+                    raidaArray[8].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -724,7 +728,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[9].detect(newCoin);
+                    raidaArray[9].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -734,7 +738,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[10].detect(newCoin);
+                    raidaArray[10].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -744,7 +748,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[11].detect(newCoin);
+                    raidaArray[11].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -755,7 +759,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[12].detect(newCoin);
+                    raidaArray[12].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -765,7 +769,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[13].detect(newCoin);
+                    raidaArray[13].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -775,7 +779,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[14].detect(newCoin);
+                    raidaArray[14].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -785,7 +789,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[15].detect(newCoin);
+                    raidaArray[15].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -795,7 +799,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[16].detect(newCoin);
+                    raidaArray[16].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -805,7 +809,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[17].detect(newCoin);
+                    raidaArray[17].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -815,7 +819,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[18].detect(newCoin);
+                    raidaArray[18].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -825,7 +829,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[19].detect(newCoin);
+                    raidaArray[19].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -835,7 +839,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[20].detect(newCoin);
+                    raidaArray[20].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -845,7 +849,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[21].detect(newCoin);
+                    raidaArray[21].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -855,7 +859,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[22].detect(newCoin);
+                    raidaArray[22].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -865,7 +869,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[23].detect(newCoin);
+                    raidaArray[23].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -875,7 +879,7 @@ public class CommandInterpreter{
                 @Override
                 public Void call() throws Exception
                 {
-                    raidaArray[24].detect(newCoin);
+                    raidaArray[24].detect(newCoin, usePan);
                     System.out.print(".");
                     return null;
                 }
@@ -1651,7 +1655,7 @@ public class CommandInterpreter{
             case "start":  nextState = stateManager.currentState.getExit( "start" );break;
             case "test":  nextState = stateManager.currentState.getExit( "test" );
             System.out.println("\nEchoing RAIDA.");
-            loadRaida();
+          //    loadRaida();
             setRaidaStatus();
             //Get JSON from RAIDA Directory
             System.out.println();

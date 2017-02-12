@@ -23,17 +23,11 @@ public class RAIDA
     public int[] trustedTriad4;
 
     public int RAIDANumber;
-    public String url;
-    public String bkurl; //backup url
     public String name; 
     public String status; //Unknown, slow or ready
     public String testStatus; //Unknown, slow or ready
     public long ms; //milliseconds
     public long dms = 0; //ms to detect
-    public String location; //country
-    public String img; //img url
-    public String protocol; //http or https
-    public int port; //80 or 443
     public String lastJsonRaFromServer = null;
     public String lastTicket = null;
     public String fullUrl;
@@ -46,11 +40,10 @@ public class RAIDA
     /**
      * Constructor for objects of class RAIDA
      */
-    public RAIDA(String url, String bkurl, String name, String status, int ms, String ext, String location, String img, String protocol, int port )
+    public RAIDA( int RAIDANumber )
     {
         // initialise instance variables
-        String raidaNumberString = name.replace("RAIDA","");
-        RAIDANumber = Integer.parseInt( raidaNumberString );
+
         //Calculate the Trusted Servers
         // Calculate the 8 trusted servers that are directly attached to broken RAIDA
         
@@ -68,23 +61,12 @@ public class RAIDA
         trustedTriad3 = new int[]{trustedServers[3] , trustedServers[5] , trustedServers[6] };
         trustedTriad4 = new int[]{trustedServers[4] , trustedServers[6] , trustedServers[7] };
 
-        this.url = url;
-        this.bkurl = bkurl;
-        this.name = name;
-        this.status = status;
-        this.testStatus = "unknown";
-        this.ms = (int)ms;
-        this.location = location;
-        this. img = img;
-        this.protocol =  protocol;
-        this.port = port;
 
-        if( this.port !=80 && this.port != 443){
-            this.fullUrl = this.protocol +"://"+ this.url + ":"+ this.port +"/service/";
-        }//if port not 80 or 443
-        else{
-            this.fullUrl = this.protocol +"://"+ this.url + "/service/";
-        }//end if the port needs to be listed
+        this.status = "unknown";
+        this.testStatus = "unknown";
+        this.ms = 0;
+        this.fullUrl = "https://raida"+ RAIDANumber + ".cloudcoin.global/service/";
+      
     }//RAIDA
 
     //Methods
@@ -136,23 +118,31 @@ public class RAIDA
         }
     }//end echo
 
-    public String detect(CloudCoin cc){
+    public String detect(CloudCoin cc, boolean usePan){
         
         String returnString = "";
-        if( this.status.equals("ready")){/*IF THE RAIDA IS UP AND READY*/
+        System.out.println(returnString);
+     
             String html ="error";
-            String url = this.fullUrl + "detect?nn=" + cc.nn + "&sn=" + cc.sn + "&an=" + cc.ans[RAIDANumber] + "&pan=" + cc.pans[RAIDANumber]  + "&denomination=" + cc.getDenomination();
+            String url ="";
+           if( usePan ){
+             url = this.fullUrl + "detect?nn=" + cc.nn + "&sn=" + cc.sn + "&an=" + cc.ans[RAIDANumber] + "&pan=" + cc.pans[RAIDANumber]  + "&denomination=" + cc.getDenomination();
+            }else{
+             url = this.fullUrl + "detect?nn=" + cc.nn + "&sn=" + cc.sn + "&an=" + cc.ans[RAIDANumber] + "&pan=" + cc.ans[RAIDANumber]  + "&denomination=" + cc.getDenomination();
+            }//end if use pan
+            
             // System.out.print( ".  Raida number " + RAIDANumber );
              System.out.println("\n Request: " + url);
             Instant before = Instant.now();
             
             try{
                 html = getHtml(url);
-             //   System.out.println( html );
+               System.out.println( html );
             }catch( IOException ex ){
                 returnString = "RAIDA " +this.RAIDANumber + " " +ex;
                 lastDetectStatus = "error";
                 //lastHtml = ex;
+                System.out.println(returnString);
                 return returnString;
             }
             Instant after = Instant.now();
@@ -161,8 +151,13 @@ public class RAIDA
             if( html.contains("pass") )
             { 
                 lastDetectStatus = "pass";
+                if( usePan ){
                 cc.ans[RAIDANumber] = cc.pans[RAIDANumber];
                 cc.calcExpirationDate();
+                }else{
+                cc.calcExpirationDate();
+                }
+                System.out.println(returnString);
             }
             else if( html.contains("fail") && html.length() < 200 )//less than 200 incase their is a fail message inside errored page
             {  lastDetectStatus = "fail"; 
@@ -172,9 +167,8 @@ public class RAIDA
             { 
                 lastDetectStatus = "error"; 
             }
-            return lastDetectStatus + "\n Response: " + this.lastJsonRaFromServer +"\n Time to process i mstest: "+ this.dms; 
-        }//end if status not ready. 
-         return "RAIDA" + cc.ans[RAIDANumber] +" cannot be detected because it failed to echo."; 
+       
+         return returnString;
     }//end detect
 
     public String get_ticket( String an, int nn, int sn, int denomination  ){
@@ -295,9 +289,11 @@ public class RAIDA
         this.dms = Duration.between(before, after).toMillis();
         if( this.lastJsonRaFromServer.contains("success") ){ 
             this.lastFixStatus = "success"; 
+            System.out.println(  "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms );
             return "success"; 
         }
         this.dms = Duration.between(before, after).toMillis();
+        System.out.println(  "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms );
         return lastFixStatus +  "\n Response: " + this.lastJsonRaFromServer +"\n Time to process in ms:"+ this.dms; 
     }//end fixit
 
@@ -320,16 +316,10 @@ public class RAIDA
         System.out.println("trustedTriad3 " + trustedTriad3[0] + ","+ trustedTriad3[1] + ", "+ trustedTriad3[2] );
         System.out.println("trustedTriad4 " + trustedTriad4[0] + ","+ trustedTriad4[1] + ", "+ trustedTriad4[2] );
 
-        System.out.println("url " + this.url);
-        System.out.println("bkurl " + this.bkurl );
-        System.out.println( "name " +this.name );
         System.out.println("status " + this.status );
         System.out.println("testStatus " + this.testStatus);
         System.out.println( "ms " +this.ms );
-        System.out.println("location " + this.location );
-        System.out.println("img " + this.img );
-        System.out.println("protocol " + this.protocol );
-        System.out.println("port " + this.port );
+    
         System.out.println("fullurl " + this.fullUrl );
 
         System.out.println("lastTicket " + lastTicket);

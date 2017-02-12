@@ -91,12 +91,12 @@ public class Bank
         
         if ( stringToFile( json, filename ) ){
         
-         /* DELETE EXPORTED CC FROM BANK */ 
-        for(int cc = 0; cc < coinsToDelete.length; cc++){
-            // System.out.println("Deleting "+ path + coinsToDelete[cc].fileName + "bank");
-            coinsToDelete[cc].deleteCoin( rootFolder, "bank" );
-
-        }//end for
+             /* DELETE EXPORTED CC FROM BANK */ 
+            for(int cc = 0; cc < coinsToDelete.length; cc++){
+                // System.out.println("Deleting "+ path + coinsToDelete[cc].fileName + "bank");
+                coinsToDelete[cc].deleteCoin( rootFolder, "bank" );
+    
+            }//end for
         
         }else{
         //Write Failed
@@ -270,18 +270,7 @@ public class Bank
         }
         return jsonData;
     }//en d json test
-
-    public static String[] toStringArray(JSONArray array) {
-        if(array==null)
-            return null;
-
-        String[] arr=new String[array.length()];
-        for(int i=0; i<arr.length; i++) {
-            arr[i]=array.optString(i);
-        }
-        return arr;
-    }//end toStringArray
-
+  
     /***
      * Given a file name, changes the file extension without changing the file
      * @parameter source The name of the target file
@@ -404,4 +393,16 @@ public class Bank
         }//end if write was good
        return jsonExported;
     }//end export
+    
+    
+    public String[] toStringArray(JSONArray array) {
+        if(array==null)
+            return null;
+
+        String[] arr=new String[array.length()];
+        for(int i=0; i<arr.length; i++) {
+            arr[i]=array.optString(i);
+        }
+        return arr;
+    }//end toStringArray
 }
